@@ -55,31 +55,33 @@ export async function surChangementAuth(callback) {
   return () => data.subscription.unsubscribe();
 }
 
-export async function inscription(email, motDePasse, pseudo) {
+/**
+ * Exécute un appel d'authentification en ramenant toutes les défaillances
+ * (erreur renvoyée ou exception réseau) à un message lisible en français.
+ */
+async function appelAuth(action) {
   const c = await obtenirClient();
   if (!c) throw new Error('Supabase n’est pas configuré.');
-  const { data, error } = await c.auth.signUp({
-    email,
-    password: motDePasse,
-    options: { data: { pseudo } },
-  });
-  if (error) throw new Error(traduireErreur(error.message));
-  return data;
+  let reponse;
+  try {
+    reponse = await action(c);
+  } catch (e) {
+    throw new Error(traduireErreur(e?.message ?? String(e)));
+  }
+  if (reponse?.error) throw new Error(traduireErreur(reponse.error.message));
+  return reponse?.data;
 }
 
-export async function connexion(email, motDePasse) {
-  const c = await obtenirClient();
-  if (!c) throw new Error('Supabase n’est pas configuré.');
-  const { data, error } = await c.auth.signInWithPassword({ email, password: motDePasse });
-  if (error) throw new Error(traduireErreur(error.message));
-  return data;
+export function inscription(email, motDePasse, pseudo) {
+  return appelAuth((c) => c.auth.signUp({ email, password: motDePasse, options: { data: { pseudo } } }));
 }
 
-export async function motDePasseOublie(email) {
-  const c = await obtenirClient();
-  if (!c) throw new Error('Supabase n’est pas configuré.');
-  const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-  if (error) throw new Error(traduireErreur(error.message));
+export function connexion(email, motDePasse) {
+  return appelAuth((c) => c.auth.signInWithPassword({ email, password: motDePasse }));
+}
+
+export function motDePasseOublie(email) {
+  return appelAuth((c) => c.auth.resetPasswordForEmail(email, { redirectTo: window.location.href }));
 }
 
 export async function deconnexion() {
@@ -95,6 +97,9 @@ function traduireErreur(msg = '') {
   if (m.includes('unable to validate email') || m.includes('invalid email')) return 'Adresse e-mail invalide.';
   if (m.includes('email not confirmed')) return 'E-mail non confirmé : vérifie ta boîte de réception.';
   if (m.includes('rate limit') || m.includes('too many')) return 'Trop de tentatives, réessaie dans un instant.';
+  if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('load failed')) {
+    return 'Serveur injoignable : vérifie ta connexion et l’URL du projet Supabase.';
+  }
   return msg;
 }
 
