@@ -30,6 +30,9 @@ d'API, aucun fichier audio à héberger, et le japonais est lu par la voix syst�
 
 ---
 
+> **Jamais utilisé Git, GitHub ou Supabase ?** Suis plutôt
+> [`INSTALLATION.md`](INSTALLATION.md) : chaque clic y est détaillé.
+
 ## Démarrer en local
 
 Aucune installation, aucun build : ce sont des fichiers statiques et des modules ES natifs.
