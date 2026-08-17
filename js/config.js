@@ -8,8 +8,8 @@
  * Tu peux aussi laisser vide et renseigner les valeurs directement dans l'application
  * (page Réglages > Synchronisation) : elles seront stockées dans ce navigateur.
  */
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://whxywbwwxvlrzvcyxdvj.supabase.co/rest/v1/';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoeHl3Ynd3eHZscnp2Y3l4ZHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDk3OTMsImV4cCI6MjEwMjUyNTc5M30.vWwsjywZa_rm5pHaRjpAUbcto__Pfbj2eYMhsqkBfDE';
 
 const CLE_LOCALE = 'gabponais.supabase';
 
