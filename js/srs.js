@@ -18,8 +18,10 @@ export const NOTES = [
 ];
 
 // Paliers d'apprentissage, en minutes.
+// Le premier palier est court exprès : il ramène la carte dans la session en cours.
+// Le second dépasse la durée d'une session, la carte revient donc plus tard.
 const PALIERS_APPRENTISSAGE = [1, 10];
-const PALIERS_REAPPRENTISSAGE = [10];
+const PALIERS_REAPPRENTISSAGE = [1, 10];
 
 const INTERVALLE_DIPLOME = 1; // jours, après avoir passé tous les paliers
 const INTERVALLE_FACILE = 4; // jours, si « Facile » dès l'apprentissage

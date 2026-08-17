@@ -11,34 +11,45 @@ const LIB_ETAT = {
   3: { txt: 'Réapprentissage', classe: 'puce--ambre' },
 };
 
+// Une carte n'est remise dans la session que si son échéance tombe dans ce délai.
+// Au-delà, elle sort de la session : la revoir tout de suite contredirait le
+// délai annoncé sur le bouton de notation.
+const SEUIL_RETOUR_MS = 2 * 60_000;
+
+// On tolère de présenter une carte un peu avant l'heure, plutôt que de faire
+// patienter devant un écran vide quand il ne reste plus qu'elle.
+const TOLERANCE_AVANCE_MS = 90_000;
+
 /**
  * Ouvre la session d'étude en plein écran.
  * @param {object} opts
  * @param {number[]} [opts.ids] limite la session à ces mots (sinon : file du jour)
- * @param {string}   [opts.titre]
  * @param {() => void} [opts.surFermeture]
  */
-export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = () => {} } = {}) {
+export function ouvrirSession({ ids = null, surFermeture = () => {} } = {}) {
   const reglages = store.lire().reglages;
 
+  /** Identifiants restant à présenter. La carte affichée n'y figure plus. */
   let file;
   if (ids) {
-    file = ids.map((id) => store.carte(id)).filter(Boolean);
+    file = ids.filter((id) => store.carte(id));
   } else {
     const jour = store.statsDuJour();
-    file = srs.construireFile(store.toutesCartes(), {
-      limiteNouvelles: Math.max(0, reglages.limiteNouvelles - jour.nouvellesFaites),
-      limiteRevisions: Math.max(0, reglages.limiteRevisions - jour.revisionsFaites),
-      ordreNouvelles: reglages.ordreNouvelles,
-    });
+    file = srs
+      .construireFile(store.toutesCartes(), {
+        limiteNouvelles: Math.max(0, reglages.limiteNouvelles - jour.nouvellesFaites),
+        limiteRevisions: Math.max(0, reglages.limiteRevisions - jour.revisionsFaites),
+        ordreNouvelles: reglages.ordreNouvelles,
+      })
+      .map((c) => c.word_id);
   }
 
   const racine = h('div', { class: 'session' });
   document.body.append(racine);
   document.body.style.overflow = 'hidden';
 
-  const total = file.length;
-  let index = 0;
+  let courante = null; // identifiant de la carte affichée
+  let faites = 0; // nombre de réponses données
   let revele = false;
   let debutCarte = Date.now();
   const debutSession = Date.now();
@@ -58,15 +69,76 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
     surFermeture();
   }
 
-  /* ------------------------------------------------------------- rendu */
+  /* -------------------------------------------------------------- la file */
+
+  function echeance(id) {
+    const c = store.carte(id);
+    if (!c || c.etat === srs.ETAT.NOUVELLE || !c.du) return 0; // toujours disponible
+    return new Date(c.du).getTime();
+  }
+
+  /**
+   * Retire de la file la prochaine carte à présenter : la première qui est
+   * réellement due, sinon la plus proche si l'attente reste courte.
+   * Renvoie null quand il ne reste que des cartes programmées pour plus tard.
+   */
+  function prelever() {
+    if (!file.length) return null;
+    const maintenant = Date.now();
+    let plusProche = Infinity;
+    let iProche = 0;
+
+    for (let i = 0; i < file.length; i++) {
+      const du = echeance(file[i]);
+      if (du <= maintenant) return file.splice(i, 1)[0];
+      if (du < plusProche) {
+        plusProche = du;
+        iProche = i;
+      }
+    }
+    if (plusProche - maintenant <= TOLERANCE_AVANCE_MS) return file.splice(iProche, 1)[0];
+    return null;
+  }
+
+  /**
+   * Cartes encore en apprentissage dont l'échéance est à venir : elles ne sont
+   * pas « dues » au sens du tableau de bord, mais reviendront dans quelques minutes.
+   */
+  function reportees() {
+    const maintenant = Date.now();
+    const delais = store
+      .toutesCartes()
+      .filter(
+        (c) =>
+          !c.suspendue &&
+          (c.etat === srs.ETAT.APPRENTISSAGE || c.etat === srs.ETAT.REAPPRENTISSAGE) &&
+          c.du &&
+          new Date(c.du).getTime() > maintenant,
+      )
+      .map((c) => new Date(c.du).getTime() - maintenant);
+    return { nombre: delais.length, delai: delais.length ? Math.min(...delais) : 0 };
+  }
+
+  function avancer() {
+    courante = prelever();
+    revele = false;
+    debutCarte = Date.now();
+    if (reglages.modeEtude === 'mixte') modeCarte = tirerMode();
+    rendre();
+  }
+
+  /* ------------------------------------------------------------- le rendu */
 
   function rendre() {
-    if (index >= file.length) return rendreBilan();
+    if (courante === null) return rendreBilan();
 
-    const carte = file[index];
-    const mot = BY_ID.get(carte.word_id);
+    const carte = store.carte(courante);
+    const mot = BY_ID.get(courante);
     const etatCarte = LIB_ETAT[carte.etat] ?? LIB_ETAT[2];
     const ecoute = modeCarte === 'ecoute';
+    // Le total inclut la carte affichée et celles qui restent : il ne peut plus
+    // être dépassé, et il grandit si une carte est remise dans la file.
+    const total = faites + 1 + file.length;
 
     racine.replaceChildren(
       h(
@@ -78,8 +150,12 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
           text: '✕',
           onclick: fermer,
         }),
-        h('div', { class: 'session__jauge' }, h('span', { style: { width: `${(index / total) * 100}%` } })),
-        h('span', { class: 'session__cnt', text: `${index + 1} / ${total}` }),
+        h(
+          'div',
+          { class: 'session__jauge' },
+          h('span', { style: { width: `${Math.min(100, (faites / total) * 100)}%` } }),
+        ),
+        h('span', { class: 'session__cnt', text: `${faites + 1} / ${total}` }),
       ),
       h(
         'div',
@@ -111,12 +187,7 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
           h('span', { class: `puce ${etatCarte.classe}`, text: etatCarte.txt }),
           carte.oublis >= 4 && h('span', { class: 'puce puce--sakura', text: '🌶️ mot coriace' }),
         ),
-        mot.homophone
-          ? h('p', {
-              class: 'fiche__indice',
-              text: `Homophone — indice : ${mot.pos}`,
-            })
-          : null,
+        mot.homophone ? h('p', { class: 'fiche__indice', text: `Homophone — indice : ${mot.pos}` }) : null,
       );
     }
     return h(
@@ -210,55 +281,53 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
   /* ------------------------------------------------------------ actions */
 
   async function jouer() {
-    const carte = file[index];
-    if (!carte) return;
-    const mot = BY_ID.get(carte.word_id);
+    if (courante === null) return;
+    const mot = BY_ID.get(courante);
     const bouton = $('#btn-son', racine);
     bouton?.classList.add('fiche__son--joue');
     const ok = await tts.dire(mot.kana, { vitesse: reglages.vitesse, uri: reglages.voixUri });
     bouton?.classList.remove('fiche__son--joue');
-    if (!ok && tts.manqueVoixJa()) {
-      toast('Aucune voix japonaise détectée sur cet appareil.', 'erreur');
-    }
+    if (!ok && tts.manqueVoixJa()) toast('Aucune voix japonaise détectée sur cet appareil.', 'erreur');
   }
 
   function reveler() {
-    if (revele) return;
+    if (revele || courante === null) return;
     revele = true;
     rendre();
     if (modeCarte === 'rappel') jouer();
   }
 
   function noter(note) {
-    if (!revele) return;
-    const carte = file[index];
-    const etaitNouvelle = carte.etat === srs.ETAT.NOUVELLE;
-    store.repondre(carte.word_id, note, { mode: modeCarte, dureeMs: Date.now() - debutCarte });
+    if (!revele || courante === null) return;
+    const id = courante;
+    const avant = store.carte(id);
+    const etaitNouvelle = avant.etat === srs.ETAT.NOUVELLE;
 
+    store.repondre(id, note, { mode: modeCarte, dureeMs: Date.now() - debutCarte });
+
+    faites += 1;
     bilan.total += 1;
     if (etaitNouvelle) bilan.nouvelles += 1;
     bilan[srs.NOTES.find((n) => n.n === note).cle] += 1;
 
-    // Une carte ratée ou encore en apprentissage revient plus tard dans la session.
-    const apres = store.carte(carte.word_id);
-    if (apres.etat === srs.ETAT.APPRENTISSAGE || apres.etat === srs.ETAT.REAPPRENTISSAGE) {
-      const cible = Math.min(file.length, index + (note === 1 ? 3 : 8));
-      file.splice(cible, 0, apres);
-    }
+    // La carte revient dans la session seulement si son échéance est proche ;
+    // sinon elle reste programmée pour plus tard, comme annoncé.
+    const apres = store.carte(id);
+    const enApprentissage = apres.etat === srs.ETAT.APPRENTISSAGE || apres.etat === srs.ETAT.REAPPRENTISSAGE;
+    if (enApprentissage && new Date(apres.du).getTime() - Date.now() <= SEUIL_RETOUR_MS) file.push(id);
 
-    index += 1;
-    revele = false;
-    debutCarte = Date.now();
-    if (reglages.modeEtude === 'mixte') modeCarte = tirerMode();
-    rendre();
+    avancer();
   }
+
+  /* -------------------------------------------------------------- bilan */
 
   function rendreBilan() {
     tts.stop();
     const minutes = Math.max(1, Math.round((Date.now() - debutSession) / 60_000));
     const precision = bilan.total ? Math.round(((bilan.good + bilan.easy) / bilan.total) * 100) : 0;
     const jour = store.statsDuJour();
-    const restant = store.compteurs().aFaire;
+    const dues = store.compteurs().aFaire;
+    const attente = reportees();
     const serie = store.serie();
 
     racine.replaceChildren(
@@ -281,6 +350,12 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
                 ? 'Reviens un peu plus tard, ou ajoute des mots nouveaux depuis les réglages.'
                 : `Encore ${Math.max(0, jour.objectif - jour.revisionsFaites)} révisions pour atteindre ton objectif du jour.`,
           }),
+          attente.nombre
+            ? h('p', {
+                style: { color: 'var(--texte-3)', fontSize: '13.5px', marginTop: '10px' },
+                text: `${pluriel(attente.nombre, 'carte')} en cours d’apprentissage ${attente.nombre > 1 ? 'reviendront' : 'reviendra'} dans ${dureeCourte(attente.delai)} pour consolider.`,
+              })
+            : null,
           bilan.total > 0 &&
             h(
               'div',
@@ -290,24 +365,24 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
               caseBilan(`${minutes} min`, 'de pratique'),
               caseBilan(bilan.nouvelles, 'mots découverts'),
               caseBilan(serie, serie >= 2 ? 'jours d’affilée' : 'jour d’affilée'),
-              caseBilan(restant, 'encore en attente'),
+              caseBilan(dues, 'dues maintenant'),
             ),
           h(
             'div',
             { style: { display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' } },
-            restant > 0 &&
+            dues > 0 &&
               h('button', {
                 class: 'btn btn--principal btn--grand',
-                text: `Continuer (${restant})`,
+                text: `Continuer (${dues})`,
                 onclick: () => {
-                  racine.remove();
-                  document.body.style.overflow = '';
                   document.removeEventListener('keydown', surTouche);
+                  document.body.style.overflow = '';
+                  racine.remove();
                   ouvrirSession({ surFermeture });
                 },
               }),
             h('button', {
-              class: restant > 0 ? 'btn btn--grand' : 'btn btn--principal btn--grand',
+              class: dues > 0 ? 'btn btn--grand' : 'btn btn--principal btn--grand',
               text: 'Retour au tableau de bord',
               onclick: fermer,
             }),
@@ -334,7 +409,7 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
       e.preventDefault();
       return fermer();
     }
-    if (index >= file.length) return;
+    if (courante === null) return;
     if (e.key === 'r' || e.key === 'R') {
       e.preventDefault();
       return jouer();
@@ -350,6 +425,6 @@ export function ouvrirSession({ ids = null, titre = 'Session', surFermeture = ()
   }
 
   document.addEventListener('keydown', surTouche);
-  rendre();
+  avancer();
   return racine;
 }
