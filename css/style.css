@@ -509,6 +509,182 @@ select { cursor: pointer; }
   }
 }
 
+/* =========================================================================
+   Animations
+   Une seule courbe d'accélération partout (--sortie), pour que tout
+   l'ensemble paraisse animé par la même main.
+   ========================================================================= */
+
+:root { --sortie: cubic-bezier(0.22, 0.68, 0, 1); }
+
+@keyframes monteDoux { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes apparait { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zoomEntree { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes bascule { from { opacity: 0; transform: perspective(900px) rotateX(-16deg) translateY(20px); } to { opacity: 1; transform: perspective(900px) rotateX(0) translateY(0); } }
+@keyframes glisseGauche { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+@keyframes pousseHaut { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes respire { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes rebond { 0% { transform: scale(0.4); opacity: 0; } 55% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes reflet { from { transform: translateX(-110%); } to { transform: translateX(320%); } }
+@keyframes pastilleVivante { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+
+/* --- entrée de page et cascade des sections ----------------------------- */
+
+.vue > * { animation: monteDoux 520ms var(--sortie) both; }
+.vue > *:nth-child(1) { animation-delay: 0ms; }
+.vue > *:nth-child(2) { animation-delay: 55ms; }
+.vue > *:nth-child(3) { animation-delay: 110ms; }
+.vue > *:nth-child(4) { animation-delay: 165ms; }
+.vue > *:nth-child(5) { animation-delay: 220ms; }
+.vue > *:nth-child(6) { animation-delay: 265ms; }
+.vue > *:nth-child(n + 7) { animation-delay: 300ms; }
+
+/* --- survols ------------------------------------------------------------ */
+
+.carte {
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.carte:hover { transform: translateY(-3px); box-shadow: var(--ombre-forte); border-color: var(--bord-fort); }
+
+.tuile-nb__ico { transition: transform 320ms var(--sortie); }
+.carte:hover .tuile-nb__ico { transform: scale(1.12) rotate(-6deg); }
+
+.btn { will-change: transform; }
+.btn--principal:hover, .btn--grand:hover { transform: translateY(-2px); }
+.btn--principal:active, .btn--grand:active { transform: translateY(0); }
+
+.puce { transition: transform var(--transition), background var(--transition); }
+.puce:hover { transform: translateY(-1px); }
+
+.nav__lien { position: relative; }
+.nav__lien::before {
+  content: ''; position: absolute; left: 0; top: 50%; width: 3px; height: 0;
+  border-radius: 99px; background: var(--violet); transform: translateY(-50%);
+  transition: height 260ms var(--sortie);
+}
+.nav__lien--actif::before { height: 60%; }
+.nav__ico { transition: transform 300ms var(--sortie); }
+.nav__lien:hover .nav__ico { transform: scale(1.18); }
+
+.nav__pastille { transition: transform 300ms var(--sortie), background var(--transition); }
+.nav__lien--actif .nav__pastille:not(.nav__pastille--vide) { animation: pastilleVivante 2.4s ease-in-out infinite; }
+
+.nav-mobile__ico { transition: transform 280ms var(--sortie); }
+.nav-mobile__lien--actif .nav-mobile__ico { transform: translateY(-2px) scale(1.15); }
+
+/* --- barres, anneaux, jauges -------------------------------------------- */
+
+.barre__part { position: relative; overflow: hidden; }
+.barre__part::after {
+  content: ''; position: absolute; inset: 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  animation: reflet 2.6s var(--sortie) infinite;
+}
+[data-theme='clair'] .barre__part::after { background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent); }
+
+.anneau__trait { transition: stroke-dasharray 1100ms var(--sortie); }
+.session__jauge span { transition: width 420ms var(--sortie); }
+.repartition span { transition: width 700ms var(--sortie); }
+
+/* --- session ------------------------------------------------------------ */
+
+.session { animation: apparait 220ms ease; }
+.session__corps { perspective: 1000px; }
+.fiche--question { animation: zoomEntree 380ms var(--sortie) both; }
+.fiche--reponse { animation: bascule 460ms var(--sortie) both; }
+
+.fiche__son { animation: respire 3.4s ease-in-out infinite; }
+.fiche__son:hover, .fiche__son--joue { animation-play-state: paused; }
+
+.fiche__kanji-q {
+  font-size: clamp(30px, 5vw, 46px); font-weight: 600; color: var(--texte-2);
+  margin-top: 4px; letter-spacing: 0.06em;
+  animation: monteDoux 460ms var(--sortie) 120ms both;
+}
+.fiche__kanji-q--absent {
+  font-size: 13px; font-weight: 500; color: var(--texte-3);
+  letter-spacing: 0.04em; font-style: italic;
+}
+
+.fiche__meta > * { animation: monteDoux 420ms var(--sortie) both; }
+.fiche__meta > *:nth-child(2) { animation-delay: 70ms; }
+
+.notes .note { animation: monteDoux 380ms var(--sortie) both; }
+.notes .note:nth-child(1) { animation-delay: 0ms; }
+.notes .note:nth-child(2) { animation-delay: 55ms; }
+.notes .note:nth-child(3) { animation-delay: 110ms; }
+.notes .note:nth-child(4) { animation-delay: 165ms; }
+.note:active { transform: scale(0.96); }
+
+.bilan__ico { animation: rebond 700ms var(--sortie) both; display: inline-block; }
+.bilan__case { animation: zoomEntree 460ms var(--sortie) both; }
+.bilan__case:nth-child(1) { animation-delay: 120ms; }
+.bilan__case:nth-child(2) { animation-delay: 180ms; }
+.bilan__case:nth-child(3) { animation-delay: 240ms; }
+.bilan__case:nth-child(4) { animation-delay: 300ms; }
+.bilan__case:nth-child(5) { animation-delay: 360ms; }
+.bilan__case:nth-child(6) { animation-delay: 420ms; }
+.bilan__case { transition: transform var(--transition); }
+.bilan__case:hover { transform: translateY(-3px); }
+
+/* --- listes et graphiques ----------------------------------------------- */
+
+.liste .ligne:not(.ligne--entete) { animation: glisseGauche 380ms var(--sortie) both; }
+.liste .ligne:nth-child(2) { animation-delay: 20ms; }
+.liste .ligne:nth-child(3) { animation-delay: 40ms; }
+.liste .ligne:nth-child(4) { animation-delay: 60ms; }
+.liste .ligne:nth-child(5) { animation-delay: 80ms; }
+.liste .ligne:nth-child(6) { animation-delay: 100ms; }
+.liste .ligne:nth-child(7) { animation-delay: 120ms; }
+.liste .ligne:nth-child(8) { animation-delay: 140ms; }
+.liste .ligne:nth-child(9) { animation-delay: 160ms; }
+.liste .ligne:nth-child(10) { animation-delay: 180ms; }
+.liste .ligne:nth-child(n + 11) { animation-delay: 200ms; }
+.ligne__son { transition: transform var(--transition), background var(--transition), color var(--transition); }
+.ligne__son:hover { transform: scale(1.12); }
+
+.histo__barre { transform-origin: bottom; animation: pousseHaut 620ms var(--sortie) both; }
+.histo__col:nth-child(2n) .histo__barre { animation-delay: 60ms; }
+.histo__col:nth-child(3n) .histo__barre { animation-delay: 110ms; }
+.histo__col { transition: transform var(--transition); }
+.histo__col:hover { transform: translateY(-3px); }
+
+.calendrier__jour { transition: transform 220ms var(--sortie); animation: apparait 500ms ease both; }
+.calendrier__jour:hover { transform: scale(1.45); }
+.calendrier__sem:nth-child(4n) .calendrier__jour { animation-delay: 90ms; }
+.calendrier__sem:nth-child(4n + 2) .calendrier__jour { animation-delay: 180ms; }
+.calendrier__sem:nth-child(4n + 3) .calendrier__jour { animation-delay: 260ms; }
+
+.palier { transition: transform var(--transition); }
+.palier:hover { transform: translateX(4px); }
+.palier__n { transition: transform 300ms var(--sortie); }
+.palier:hover .palier__n { transform: scale(1.12); }
+
+/* --- fenêtres et réglages ----------------------------------------------- */
+
+.modale { animation: apparait 200ms ease; }
+.modale__boite { animation: zoomEntree 340ms var(--sortie); }
+.bascule::after { transition: transform 280ms var(--sortie), width 200ms var(--sortie); }
+.bascule:active::after { width: 26px; }
+.auth__carte { animation: zoomEntree 480ms var(--sortie) both; }
+.auth__form > * { animation: monteDoux 420ms var(--sortie) both; }
+.auth__form > *:nth-child(2) { animation-delay: 60ms; }
+.auth__form > *:nth-child(3) { animation-delay: 120ms; }
+.auth__form > *:nth-child(4) { animation-delay: 180ms; }
+.auth__form > *:nth-child(n + 5) { animation-delay: 240ms; }
+.rotor { animation: tourne 700ms linear infinite; }
+.marque__sceau { transition: transform 400ms var(--sortie); }
+.marque:hover .marque__sceau { transform: rotate(-8deg) scale(1.08); }
+
+/* --- coupe-circuit ------------------------------------------------------ */
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+[data-anim='off'] *, [data-anim='off'] *::before, [data-anim='off'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
 }

@@ -153,7 +153,7 @@ export function vueVocabulaire(naviguer, rafraichir) {
 
   return h(
     'div',
-    {},
+    { class: 'vue' },
     h(
       'div',
       { class: 'entete' },

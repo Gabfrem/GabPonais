@@ -170,9 +170,12 @@ export function ouvrirSession({ ids = null, surFermeture = () => {} } = {}) {
 
   function ficheQuestion(mot, carte, etatCarte, ecoute) {
     if (ecoute) {
+      // Le kanji est montré pendant l'écoute : il ne livre pas la prononciation,
+      // mais il laisse le sens s'associer à la forme écrite pendant la réflexion.
+      const kanjiVisible = reglages.kanjiQuestion && mot.kanji !== mot.kana;
       return h(
         'div',
-        { class: 'fiche' },
+        { class: 'fiche fiche--question' },
         h('p', { class: 'fiche__consigne', text: 'Écoute — quel est le sens de ce mot ?' }),
         h('button', {
           class: 'fiche__son',
@@ -181,18 +184,26 @@ export function ouvrirSession({ ids = null, surFermeture = () => {} } = {}) {
           title: 'Réécouter (R ou clic)',
           onclick: jouer,
         }),
+        reglages.kanjiQuestion
+          ? kanjiVisible
+            ? h('p', { class: 'fiche__kanji-q ja', text: mot.kanji })
+            : h('p', { class: 'fiche__kanji-q fiche__kanji-q--absent', text: 'mot écrit en kana' })
+          : null,
         h(
           'div',
           { class: 'fiche__meta' },
           h('span', { class: `puce ${etatCarte.classe}`, text: etatCarte.txt }),
           carte.oublis >= 4 && h('span', { class: 'puce puce--sakura', text: '🌶️ mot coriace' }),
         ),
-        mot.homophone ? h('p', { class: 'fiche__indice', text: `Homophone — indice : ${mot.pos}` }) : null,
+        // Sans kanji distinctif, deux homophones seraient indiscernables à l'oreille.
+        mot.homophone && !kanjiVisible
+          ? h('p', { class: 'fiche__indice', text: `Homophone — indice : ${mot.pos}` })
+          : null,
       );
     }
     return h(
       'div',
-      { class: 'fiche' },
+      { class: 'fiche fiche--question' },
       h('p', { class: 'fiche__consigne', text: 'Rappel — comment dit-on en japonais ?' }),
       h('p', { class: 'fiche__fr', text: mot.fr }),
       h(
@@ -207,7 +218,7 @@ export function ouvrirSession({ ids = null, surFermeture = () => {} } = {}) {
   function ficheReponse(mot, carte, ecoute) {
     return h(
       'div',
-      { class: 'fiche' },
+      { class: 'fiche fiche--reponse' },
       h('p', { class: 'fiche__consigne', text: ecoute ? 'Réponse' : 'Réponse — écoute la prononciation' }),
       h(
         'div',

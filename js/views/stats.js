@@ -1,4 +1,4 @@
-import { h, pct, cleJour, dateCourteFr, arrondi } from '../util.js';
+import { h, pct, cleJour, dateCourteFr, arrondi, nombreAnime } from '../util.js';
 import { TOTAL_WORDS } from '../data/words.js';
 import * as store from '../store.js';
 import * as srs from '../srs.js';
@@ -17,7 +17,7 @@ export function vueStats() {
 
   return h(
     'div',
-    {},
+    { class: 'vue' },
     h(
       'div',
       { class: 'entete' },
@@ -32,9 +32,9 @@ export function vueStats() {
     h(
       'section',
       { class: 'grille grille--4' },
-      tuile('🔥', String(serie), 'série en cours'),
-      tuile('🏆', String(meilleure), 'meilleure série'),
-      tuile('🗂️', String(totalRevisions), 'révisions au total'),
+      tuile('🔥', serie, 'série en cours'),
+      tuile('🏆', meilleure, 'meilleure série'),
+      tuile('🗂️', totalRevisions, 'révisions au total'),
       tuile('⏱️', formaterDuree(tempsMs), 'temps de pratique'),
     ),
 
@@ -104,7 +104,13 @@ function tuile(ico, valeur, libelle) {
   return h(
     'div',
     { class: 'carte' },
-    h('div', { class: 'stat' }, h('div', { class: 'stat__ico', text: ico }), h('div', { class: 'stat__val', text: valeur }), h('div', { class: 'stat__lib', text: libelle })),
+    h(
+      'div',
+      { class: 'stat' },
+      h('div', { class: 'stat__ico', text: ico }),
+      h('div', { class: 'stat__val' }, typeof valeur === 'number' ? nombreAnime(valeur) : String(valeur)),
+      h('div', { class: 'stat__lib', text: libelle }),
+    ),
   );
 }
 
@@ -118,7 +124,11 @@ function carteRetention(jours) {
     'div',
     { class: 'carte' },
     h('div', { class: 'stat__lib', text: `Taux de réussite — ${jours} jours` }),
-    h('div', { class: 'stat__val', style: { marginTop: '6px' }, text: r.taux === null ? '—' : `${r.taux} %` }),
+    h(
+      'div',
+      { class: 'stat__val', style: { marginTop: '6px' } },
+      r.taux === null ? '—' : nombreAnime(r.taux, (n) => `${n} %`),
+    ),
     h('div', { class: 'barre', style: { marginTop: '10px' } }, h('div', { class: 'barre__part', style: { width: `${r.taux ?? 0}%` } })),
     h('div', { class: 'stat__lib', style: { marginTop: '8px' }, text: `sur ${r.total} révisions de rappel` }),
   );

@@ -25,6 +25,8 @@ export const REGLAGES_DEFAUT = {
   voixUri: null,
   afficherRomaji: true,
   afficherKanji: true,
+  kanjiQuestion: true, // le kanji visible pendant l'écoute, avant la réponse
+  animations: true,
   ordreNouvelles: 'frequence', // 'frequence' | 'aleatoire'
   theme: 'sombre', // 'sombre' | 'clair'
 };
@@ -202,6 +204,7 @@ const pousserProfilDiffere = differer(async () => {
 
 export function appliquerTheme() {
   document.documentElement.dataset.theme = etat.reglages.theme === 'clair' ? 'clair' : 'sombre';
+  document.documentElement.dataset.anim = etat.reglages.animations === false ? 'off' : 'on';
 }
 
 /* --------------------------------------------------------------- cartes */

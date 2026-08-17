@@ -13,6 +13,7 @@ sur la face réponse, et peuvent être masqués. L'objectif est la **reconnaissa
 | | |
 |---|---|
 | **Écoute → sens** | Le mot est prononcé, tu devines le sens, puis tu t'auto-évalues. C'est le mode par défaut. |
+| **Le kanji pendant l'écoute** | Il s'affiche sous le haut-parleur, avant la réponse : il ne livre pas la prononciation, mais laisse le sens s'associer à la forme écrite pendant la réflexion. Désactivable. |
 | **Français → japonais** | Le mode inverse, pour le rappel actif. |
 | **Mixte** | Deux questions sur trois à l'écoute. |
 | **Répétition espacée** | Variante de SM-2 : paliers d'apprentissage à 1 et 10 min, puis intervalles en jours modulés par une « facilité » propre à chaque mot, plafonnés à un an. |

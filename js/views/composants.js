@@ -1,4 +1,4 @@
-import { h } from '../util.js';
+import { h, animationsCoupees, nombreAnime } from '../util.js';
 
 let compteurId = 0;
 
@@ -21,7 +21,17 @@ export function anneau({ pourcentage, valeur, libelle, taille = 138, epaisseur =
     </defs>
     <circle class="anneau__piste" cx="${taille / 2}" cy="${taille / 2}" r="${r}" stroke-width="${epaisseur}" />
     <circle class="anneau__trait" cx="${taille / 2}" cy="${taille / 2}" r="${r}" stroke-width="${epaisseur}"
-            stroke="url(#${id})" stroke-dasharray="${rempli} ${circonference}" />`;
+            stroke="url(#${id})" stroke-dasharray="${animationsCoupees() ? rempli : 0} ${circonference}" />`;
+
+  if (!animationsCoupees()) {
+    // Le trait part de zéro : la transition CSS ne se déclenche qu'au changement.
+    const trait = svg.querySelector('.anneau__trait');
+    const remplir = () => trait.setAttribute('stroke-dasharray', `${rempli} ${circonference}`);
+    requestAnimationFrame(() => requestAnimationFrame(remplir));
+    // Idempotent, et indispensable si l'onglet est en arrière-plan : sans
+    // requestAnimationFrame, l'anneau resterait vide.
+    setTimeout(remplir, 300);
+  }
 
   return h(
     'div',
@@ -33,7 +43,11 @@ export function anneau({ pourcentage, valeur, libelle, taille = 138, epaisseur =
       h(
         'div',
         {},
-        h('div', { class: 'anneau__val', text: String(valeur) }),
+        h(
+          'div',
+          { class: 'anneau__val' },
+          Number.isFinite(Number(valeur)) ? nombreAnime(Number(valeur)) : String(valeur),
+        ),
         h('div', { class: 'anneau__lib', text: libelle }),
       ),
     ),

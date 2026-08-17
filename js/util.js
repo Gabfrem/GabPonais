@@ -99,6 +99,47 @@ export function differer(fn, delai = 800) {
   return differee;
 }
 
+/** Vrai si l'utilisateur (ou le système) a demandé à limiter les animations. */
+export function animationsCoupees() {
+  return (
+    document.documentElement.dataset.anim === 'off' ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+/**
+ * Fait défiler un nombre de 0 jusqu'à sa valeur.
+ * @param {number} valeur
+ * @param {(n: number) => string} [format]
+ */
+export function nombreAnime(valeur, format = (n) => String(n), duree = 900) {
+  const el = h('span', { text: format(valeur) });
+  if (animationsCoupees() || !Number.isFinite(valeur) || valeur === 0) return el;
+
+  el.textContent = format(0);
+  const depart = performance.now();
+  let fini = false;
+  const terminer = () => {
+    if (fini) return;
+    fini = true;
+    el.textContent = format(valeur);
+  };
+  const pas = (maintenant) => {
+    if (fini) return;
+    const t = Math.min(1, (maintenant - depart) / duree);
+    // Décélération douce, pour finir sans à-coup sur la valeur exacte.
+    const p = 1 - (1 - t) ** 3;
+    el.textContent = format(Math.round(valeur * p));
+    if (t < 1) requestAnimationFrame(pas);
+    else terminer();
+  };
+  requestAnimationFrame(pas);
+  // Filet de sécurité : requestAnimationFrame ne s'exécute pas dans un onglet
+  // en arrière-plan. Sans cela, le chiffre resterait figé à zéro.
+  setTimeout(terminer, duree + 400);
+  return el;
+}
+
 export function toast(message, type = 'info') {
   let zone = $('#toasts');
   if (!zone) {

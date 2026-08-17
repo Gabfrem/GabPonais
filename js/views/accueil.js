@@ -1,4 +1,4 @@
-import { h, pct, pluriel } from '../util.js';
+import { h, pct, pluriel, nombreAnime } from '../util.js';
 import { PALIERS, TOTAL_WORDS, BY_ID } from '../data/words.js';
 import * as store from '../store.js';
 import * as tts from '../tts.js';
@@ -27,7 +27,7 @@ export function vueAccueil(naviguer, rafraichir) {
 
   return h(
     'div',
-    {},
+    { class: 'vue' },
     tts.manqueVoixJa()
       ? h(
           'div',
@@ -85,10 +85,10 @@ export function vueAccueil(naviguer, rafraichir) {
     h(
       'section',
       { class: 'grille grille--4', style: { marginTop: '16px' } },
-      tuile('🔥', serie ? `${serie}` : '0', serie >= 2 ? 'jours d’affilée' : 'jour d’affilée', 'ambre'),
-      tuile('📚', `${c.vues}`, `mots rencontrés sur ${TOTAL_WORDS}`, 'violet'),
-      tuile('🌱', `${c.apprises}`, 'mots bien ancrés', 'menthe'),
-      tuile('🎯', ret.taux === null ? '—' : `${ret.taux} %`, 'réussite sur 30 jours', 'sakura'),
+      tuile('🔥', serie, serie >= 2 ? 'jours d’affilée' : 'jour d’affilée', 'ambre'),
+      tuile('📚', c.vues, `mots rencontrés sur ${TOTAL_WORDS}`, 'violet'),
+      tuile('🌱', c.apprises, 'mots bien ancrés', 'menthe'),
+      tuile('🎯', ret.taux, 'réussite sur 30 jours', 'sakura', ' %'),
     ),
 
     /* --------------------------------------------------------- avancée */
@@ -163,7 +163,9 @@ export function vueAccueil(naviguer, rafraichir) {
   );
 }
 
-function tuile(ico, valeur, libelle, couleur) {
+function tuile(ico, valeur, libelle, couleur, suffixe = '') {
+  const contenu =
+    valeur === null || valeur === undefined ? '—' : nombreAnime(valeur, (n) => `${n}${suffixe}`);
   return h(
     'div',
     { class: 'carte' },
@@ -171,7 +173,12 @@ function tuile(ico, valeur, libelle, couleur) {
       'div',
       { class: 'tuile-nb' },
       h('div', { class: `tuile-nb__ico tuile-nb__ico--${couleur}`, text: ico }),
-      h('div', { class: 'stat' }, h('div', { class: 'stat__val', text: valeur }), h('div', { class: 'stat__lib', text: libelle })),
+      h(
+        'div',
+        { class: 'stat' },
+        h('div', { class: 'stat__val' }, contenu),
+        h('div', { class: 'stat__lib', text: libelle }),
+      ),
     ),
   );
 }

@@ -15,7 +15,7 @@ export function vueReglages(naviguer, rafraichir) {
 
   return h(
     'div',
-    {},
+    { class: 'vue' },
     h(
       'div',
       { class: 'entete' },
@@ -96,6 +96,12 @@ export function vueReglages(naviguer, rafraichir) {
         onchange: (v) => maj({ lectureAuto: v }),
       }),
       bascule({
+        libelle: 'Montrer le kanji pendant l’écoute',
+        aide: 'Le kanji apparaît sous le haut-parleur, avant la réponse. Il ne livre pas la prononciation, mais laisse le sens s’associer à la forme écrite. Les mots sans kanji affichent simplement une mention.',
+        valeur: r.kanjiQuestion,
+        onchange: (v) => maj({ kanjiQuestion: v }),
+      }),
+      bascule({
         libelle: 'Afficher le rōmaji',
         aide: 'La transcription latine sur la face réponse.',
         valeur: r.afficherRomaji,
@@ -125,6 +131,12 @@ export function vueReglages(naviguer, rafraichir) {
           ['clair', 'Clair'],
         ],
         onchange: (v) => maj({ theme: v }),
+      }),
+      bascule({
+        libelle: 'Animations',
+        aide: 'Transitions, cascades et compteurs animés. À couper si tu les trouves envahissantes ou si l’appareil rame.',
+        valeur: r.animations,
+        onchange: (v) => maj({ animations: v }),
       }),
     ),
 
