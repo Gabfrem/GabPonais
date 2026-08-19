@@ -5,7 +5,7 @@ import { h, $, vide, toast } from './util.js';
 import * as store from './store.js';
 import * as supa from './supa.js';
 import * as tts from './tts.js';
-import { estConfigure } from './config.js';
+import { estConfigure, modeLocalChoisi, choisirModeLocal, quitterModeLocal } from './config.js';
 import { vueAuth, normaliser } from './views/auth.js';
 import { vueAccueil } from './views/accueil.js';
 import { vuePratique } from './views/pratique.js';
@@ -13,8 +13,8 @@ import { vueVocabulaire } from './views/vocabulaire.js';
 import { vueStats } from './views/stats.js';
 import { vueReglages } from './views/reglages.js';
 import { ouvrirSession } from './views/session.js';
+import { ouvrirTestNiveau } from './views/test-niveau.js';
 
-const CLE_MODE_LOCAL = 'gabponais.mode-local';
 
 const ROUTES = {
   accueil: { titre: 'Accueil', ico: '🏠', vue: vueAccueil },
@@ -41,10 +41,8 @@ async function demarrer() {
     } catch (e) {
       console.warn('Session illisible :', e);
     }
-    if (!utilisateur && localStorage.getItem(CLE_MODE_LOCAL) !== '1') {
-      return montrerAuth();
-    }
-  } else if (localStorage.getItem(CLE_MODE_LOCAL) !== '1') {
+    if (!utilisateur && !modeLocalChoisi()) return montrerAuth();
+  } else if (!modeLocalChoisi()) {
     return montrerAuth();
   }
 
@@ -54,8 +52,8 @@ async function demarrer() {
 function montrerAuth() {
   vide(racine).append(
     vueAuth(async (utilisateur) => {
-      if (!utilisateur) localStorage.setItem(CLE_MODE_LOCAL, '1');
-      else localStorage.removeItem(CLE_MODE_LOCAL);
+      if (!utilisateur) choisirModeLocal();
+      else quitterModeLocal();
       ecranChargement(utilisateur ? 'Récupération de ta progression…' : 'Préparation…');
       await entrer(utilisateur);
     }),
@@ -67,6 +65,12 @@ async function entrer(utilisateur) {
   await store.initialiser(utilisateur);
   construireCoquille();
   rendre();
+
+  // Premier démarrage : on propose de se situer plutôt que de repartir de zéro.
+  // L'écran d'accueil du test permet de passer directement.
+  if (!store.lire().reglages.testNiveauFait && store.compteurs().vues === 0) {
+    ouvrirTestNiveau({ surFermeture: () => rendre() });
+  }
 
   if (utilisateur) {
     supa.surChangementAuth((session) => {

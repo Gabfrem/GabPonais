@@ -12,6 +12,21 @@ export const SUPABASE_URL = 'https://whxywbwwxvlrzvcyxdvj.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoeHl3Ynd3eHZscnp2Y3l4ZHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDk3OTMsImV4cCI6MjEwMjUyNTc5M30.vWwsjywZa_rm5pHaRjpAUbcto__Pfbj2eYMhsqkBfDE';
 
 const CLE_LOCALE = 'gabponais.supabase';
+const CLE_MODE_LOCAL = 'gabponais.mode-local';
+
+/* Le mode local est un choix explicite de l'utilisateur : tant qu'il est
+   mémorisé, l'écran de connexion n'est plus proposé au démarrage. */
+export function modeLocalChoisi() {
+  return localStorage.getItem(CLE_MODE_LOCAL) === '1';
+}
+
+export function choisirModeLocal() {
+  localStorage.setItem(CLE_MODE_LOCAL, '1');
+}
+
+export function quitterModeLocal() {
+  localStorage.removeItem(CLE_MODE_LOCAL);
+}
 
 /**
  * Ramène l'adresse à la racine du projet.

@@ -2,8 +2,15 @@ import { h, toast, arrondi } from '../util.js';
 import * as store from '../store.js';
 import * as tts from '../tts.js';
 import * as supa from '../supa.js';
-import { configEffective, enregistrerConfigLocale, effacerConfigLocale, SUPABASE_URL } from '../config.js';
+import {
+  configEffective,
+  enregistrerConfigLocale,
+  effacerConfigLocale,
+  quitterModeLocal,
+  SUPABASE_URL,
+} from '../config.js';
 import { confirmer } from './composants.js';
+import { ouvrirTestNiveau } from './test-niveau.js';
 
 export function vueReglages(naviguer, rafraichir) {
   const etat = store.lire();
@@ -65,6 +72,24 @@ export function vueReglages(naviguer, rafraichir) {
         suffixe: 'cartes',
         onchange: (v) => maj({ limiteRevisions: v }),
       }),
+      h(
+        'div',
+        { class: 'interrupteur' },
+        h(
+          'div',
+          {},
+          h('div', { class: 'interrupteur__txt', text: 'Test de niveau' }),
+          h('div', {
+            class: 'interrupteur__aide',
+            text: 'Situe ce que tu connais déjà et programme ces mots en révision, plutôt que de les réapprendre. Ne touche pas aux mots déjà en cours.',
+          }),
+        ),
+        h('button', {
+          class: 'btn btn--fantome',
+          text: 'Passer le test',
+          onclick: () => ouvrirTestNiveau({ surFermeture: rafraichir }),
+        }),
+      ),
       champSelect({
         libelle: 'Ordre des nouveaux mots',
         valeur: r.ordreNouvelles,
@@ -393,22 +418,30 @@ function sectionCompte(etat, rafraichir) {
 
   if (cfg) {
     section.append(
-      h('button', {
-        class: 'btn btn--principal',
-        text: 'Créer un compte / se connecter',
-        onclick: () => window.location.reload(),
-      }),
-      cfg.source === 'navigateur'
-        ? h('button', {
-            class: 'btn btn--fantome',
-            style: { marginLeft: '10px' },
-            text: 'Oublier ce projet Supabase',
-            onclick: () => {
-              effacerConfigLocale();
-              window.location.reload();
-            },
-          })
-        : null,
+      h(
+        'div',
+        { style: { display: 'flex', gap: '10px', flexWrap: 'wrap' } },
+        h('button', {
+          class: 'btn btn--principal',
+          text: 'Créer un compte / se connecter',
+          onclick: () => {
+            // Sans cela, le rechargement retomberait directement en mode local
+            // et l'écran de connexion ne s'afficherait jamais.
+            quitterModeLocal();
+            window.location.reload();
+          },
+        }),
+        cfg.source === 'navigateur'
+          ? h('button', {
+              class: 'btn btn--fantome',
+              text: 'Oublier ce projet Supabase',
+              onclick: () => {
+                effacerConfigLocale();
+                window.location.reload();
+              },
+            })
+          : null,
+      ),
     );
     return section;
   }

@@ -545,6 +545,19 @@ select { cursor: pointer; }
 .couverture__cible { color: var(--menthe); font-size: 12.5px; }
 .couverture__note { font-size: 13.5px; color: var(--texte-2); line-height: 1.7; }
 
+.detail-test {
+  text-align: left; margin-top: 20px;
+  border: 1px solid var(--bord); border-radius: var(--r-m); overflow: hidden;
+}
+.detail-test__ligne {
+  display: grid; grid-template-columns: 1fr auto 104px; align-items: center; gap: 12px;
+  padding: 9px 14px; border-bottom: 1px solid var(--bord); font-size: 13px;
+}
+.detail-test__ligne:last-child { border-bottom: none; }
+.detail-test__nom { color: var(--texte-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-test__score { font-variant-numeric: tabular-nums; font-weight: 650; }
+.detail-test .puce { justify-content: center; }
+
 .prevision {
   margin-top: 18px; padding: 16px; border-radius: var(--r-m);
   background: var(--fond-2); border: 1px solid var(--bord);

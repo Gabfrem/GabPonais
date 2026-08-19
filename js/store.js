@@ -35,6 +35,7 @@ export const REGLAGES_DEFAUT = {
   animations: true,
   ordreNouvelles: 'frequence', // 'frequence' | 'aleatoire'
   theme: 'sombre', // 'sombre' | 'clair'
+  testNiveauFait: false, // le test de départ n'est proposé qu'une fois
 };
 
 const etat = {
@@ -442,6 +443,53 @@ export function capaciteQuotidienne() {
 
 export function couvertureEstimee() {
   return charge.couverture(compteurs().vues);
+}
+
+/**
+ * Sur combien de jours répartir un lot de mots reconnus au test de niveau,
+ * pour rester sous la capacité quotidienne.
+ */
+export function etalementEstime(nombre) {
+  if (!nombre) return { jours: 0, parJour: 0 };
+  const capacite = charge.capaciteQuotidienne(etat.reglages, etat.revisions);
+  const jours = Math.min(21, Math.max(3, Math.ceil(nombre / Math.max(1, capacite * 0.6))));
+  return { jours, parJour: Math.ceil(nombre / jours) };
+}
+
+/**
+ * Applique le résultat du test de niveau.
+ * Les mots reconnus entrent en révision à courte échéance, échelonnée : ils
+ * ne sont pas déclarés acquis, puisque les reconnaître à l'oreille reste à
+ * vérifier, et l'étalement évite la vague de révisions du lendemain.
+ */
+export function appliquerNiveau(ids) {
+  const maintenant = Date.now();
+  const { jours } = etalementEstime(ids.length);
+
+  ids.forEach((id, i) => {
+    const c = etat.cartes.get(id);
+    if (!c || c.etat !== srs.ETAT.NOUVELLE) return;
+    const jour = 1 + Math.floor((i / Math.max(1, ids.length)) * jours);
+    etat.cartes.set(id, {
+      ...c,
+      etat: srs.ETAT.REVISION,
+      intervalle: jour,
+      facilite: 2.5,
+      palier: 0,
+      reps: 1,
+      oublis: 0,
+      premiere: new Date(maintenant).toISOString(),
+      derniere: new Date(maintenant).toISOString(),
+      du: new Date(maintenant + jour * JOUR).toISOString(),
+      suspendue: false,
+    });
+    salies.add(id);
+  });
+
+  etat.reglages = { ...etat.reglages, testNiveauFait: true };
+  sauverLocal();
+  notifier();
+  pousser();
 }
 
 /** Nombre de révisions par jour, indexé par clé de jour. */
