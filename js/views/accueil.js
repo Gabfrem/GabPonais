@@ -1,5 +1,6 @@
 import { h, pct, pluriel, nombreAnime } from '../util.js';
 import { PALIERS, TOTAL_WORDS, BY_ID } from '../data/words.js';
+import { disponibles } from '../phrases.js';
 import * as store from '../store.js';
 import * as tts from '../tts.js';
 import { ouvrirSession } from './session.js';
@@ -12,6 +13,7 @@ export function vueAccueil(naviguer, rafraichir) {
   const serie = store.serie();
   const ret = store.retention(30);
   const pseudo = etat.utilisateur?.pseudo ?? null;
+  const phrasesPretes = disponibles((id) => store.carte(id)?.etat !== 0).length;
 
   const heure = new Date().getHours();
   const salut =
@@ -41,6 +43,7 @@ export function vueAccueil(naviguer, rafraichir) {
           ),
         )
       : null,
+    bandeauCharge(),
     etat.synchro === 'hors-ligne'
       ? h(
           'div',
@@ -160,6 +163,49 @@ export function vueAccueil(naviguer, rafraichir) {
         coriaces(lancer),
       ),
     ),
+
+    /* ------------------------------------------------------- mise en pratique */
+    h(
+      'section',
+      { class: 'carte', style: { marginTop: '16px' } },
+      h(
+        'div',
+        { style: { display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' } },
+        h('div', { class: 'mode__ico', style: { marginBottom: '0' }, text: '🎧' }),
+        h(
+          'div',
+          { style: { flex: '1 1 260px' } },
+          h('h3', { style: { fontSize: '17px', marginBottom: '6px' }, text: 'Mettre en pratique' }),
+          h('p', {
+            style: { fontSize: '13.5px', color: 'var(--texte-2)', lineHeight: '1.6' },
+            text: phrasesPretes
+              ? `${pluriel(phrasesPretes, 'phrase')} à ta portée, et un mode de reconnaissance rapide. Ces exercices n’ajoutent aucune révision.`
+              : 'Les exercices d’écoute s’ouvriront dès que tu auras rencontré quelques dizaines de mots.',
+          }),
+        ),
+        h('button', {
+          class: 'btn btn--principal',
+          text: 'Ouvrir la pratique',
+          onclick: () => naviguer('pratique'),
+        }),
+      ),
+    ),
+  );
+}
+
+/**
+ * Prévient quand la charge dérape, pendant qu'il est encore temps d'agir.
+ * C'est l'avertissement qui manque partout ailleurs : la dette de révision
+ * ne se voit qu'une fois installée.
+ */
+function bandeauCharge() {
+  const d = store.diagnosticCharge();
+  if (d.niveau !== 'tendu' && d.niveau !== 'surcharge') return null;
+  return h(
+    'div',
+    { class: 'bandeau' },
+    h('span', { class: 'bandeau__ico', text: d.niveau === 'surcharge' ? '🧯' : '⚖️' }),
+    h('span', {}, d.message),
   );
 }
 

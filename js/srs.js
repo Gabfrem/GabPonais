@@ -30,6 +30,7 @@ const FACILITE_MIN = 1.3;
 const INTERVALLE_MAX = 365; // jours
 const MULT_OUBLI = 0.4; // l'intervalle est réduit à 40 % après un oubli
 const SEUIL_SANGSUE = 6; // au-delà, la carte est signalée comme « sangsue »
+export const SEUIL_PAUSE_AUTO = 9; // au-delà, elle est mise de côté d'office
 
 const MINUTE = 60_000;
 const JOUR = 86_400_000;

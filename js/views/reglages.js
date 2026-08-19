@@ -27,10 +27,13 @@ export function vueReglages(naviguer, rafraichir) {
       ),
     ),
 
+    /* -------------------------------------------------- charge de travail */
+    sectionCharge(r, maj),
+
     /* ------------------------------------------------------- étude */
     h(
       'section',
-      { class: 'carte' },
+      { class: 'carte', style: { marginTop: '16px' } },
       h('h3', { class: 'carte__titre', text: 'Rythme d’apprentissage' }),
       curseur({
         libelle: 'Objectif quotidien',
@@ -176,6 +179,85 @@ export function vueReglages(naviguer, rafraichir) {
 
 /* --------------------------------------------------------------- blocs */
 
+/**
+ * Le réglage central : on part du temps disponible, pas d'un nombre de cartes.
+ * L'application en déduit un rythme soutenable et annonce la charge à venir,
+ * au lieu de la laisser se découvrir des semaines plus tard.
+ */
+function sectionCharge(r, maj) {
+  const capacite = store.capaciteQuotidienne();
+  const regime = store.chargeRegime(r.limiteNouvelles);
+  const diag = store.diagnosticCharge();
+
+  const niveaux = {
+    calme: { classe: 'puce--menthe', txt: 'charge légère' },
+    sain: { classe: 'puce--menthe', txt: 'charge équilibrée' },
+    tendu: { classe: 'puce--ambre', txt: 'charge tendue' },
+    surcharge: { classe: 'puce--sakura', txt: 'surcharge' },
+  }[diag.niveau];
+
+  return h(
+    'section',
+    { class: 'carte' },
+    h(
+      'div',
+      { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px' } },
+      h('h3', { class: 'carte__titre', style: { marginBottom: '0' }, text: 'Temps disponible' }),
+      h('span', { class: `puce ${niveaux.classe}`, text: niveaux.txt }),
+    ),
+    curseur({
+      libelle: 'Budget quotidien',
+      aide: 'Le point de départ de tout le reste. L’application mesure ton temps réel par carte et en déduit ce qui tient dans ce budget.',
+      valeur: r.budgetMinutes,
+      min: 5,
+      max: 90,
+      pas: 5,
+      suffixe: 'min par jour',
+      onchange: (v) => maj({ budgetMinutes: v }),
+    }),
+    bascule({
+      libelle: 'Adapter les nouveaux mots à la charge',
+      aide: 'Quand les révisions s’accumulent, l’introduction de nouveautés ralentit puis s’arrête, le temps que ça redescende. C’est ce qui empêche la spirale des heures de révision quotidiennes.',
+      valeur: r.pilotageAuto,
+      onchange: (v) => maj({ pilotageAuto: v }),
+    }),
+    bascule({
+      libelle: 'Mettre en pause les mots qui résistent',
+      aide: 'Un mot raté neuf fois est mis de côté automatiquement. Une poignée de mots pareils peut consommer un quart d’une session sans rien apprendre.',
+      valeur: r.pauseAutoSangsues,
+      onchange: (v) => maj({ pauseAutoSangsues: v }),
+    }),
+    h(
+      'div',
+      { class: 'prevision' },
+      h('div', { class: 'prevision__titre', text: 'Ce que cela donne' }),
+      h(
+        'div',
+        { class: 'prevision__grille' },
+        previsionCase(`${capacite}`, 'cartes tiennent dans ton budget'),
+        previsionCase(`${regime.cartes}`, 'cartes par jour en régime stable'),
+        previsionCase(`${regime.minutes} min`, 'par jour une fois lancé'),
+      ),
+      h('p', {
+        class: 'prevision__note',
+        text:
+          regime.minutes > r.budgetMinutes * 1.3
+            ? `Attention : à ${r.limiteNouvelles} nouveaux mots par jour, la charge finira par dépasser ton budget. Le pilotage automatique la contiendra, mais tu peux aussi baisser le plafond de nouveautés.`
+            : 'Chaque mot introduit produit environ cinq révisions par jour en régime stable. C’est ce facteur, invisible au début, qui fait exploser la charge au bout de quelques mois.',
+      }),
+    ),
+  );
+}
+
+function previsionCase(valeur, libelle) {
+  return h(
+    'div',
+    { class: 'prevision__case' },
+    h('div', { class: 'prevision__val', text: valeur }),
+    h('div', { class: 'prevision__lib', text: libelle }),
+  );
+}
+
 function sectionVoix(r, maj) {
   const voix = tts.voixJaponaises();
   const conteneur = h(
@@ -225,6 +307,16 @@ function sectionVoix(r, maj) {
       pas: 0.05,
       format: (v) => `× ${arrondi(v, 2)}`,
       onchange: (v) => maj({ vitesse: v }),
+    }),
+    curseur({
+      libelle: 'Vitesse des exercices de pratique',
+      aide: 'Volontairement plus rapide que les cartes : c’est au débit naturel qu’il faut s’habituer pour suivre une vraie conversation.',
+      valeur: r.vitessePratique,
+      min: 0.7,
+      max: 1.4,
+      pas: 0.05,
+      format: (v) => `× ${arrondi(v, 2)}`,
+      onchange: (v) => maj({ vitessePratique: v }),
     }),
     h('button', {
       class: 'btn btn--fantome',

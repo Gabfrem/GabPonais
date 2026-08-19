@@ -17,6 +17,8 @@ sur la face réponse, et peuvent être masqués. L'objectif est la **reconnaissa
 | **Français → japonais** | Le mode inverse, pour le rappel actif. |
 | **Mixte** | Deux questions sur trois à l'écoute. |
 | **Répétition espacée** | Variante de SM-2 : paliers d'apprentissage à 1 et 10 min, puis intervalles en jours modulés par une « facilité » propre à chaque mot, plafonnés à un an. |
+| **Charge maîtrisée** | On règle un **budget en minutes**, pas un nombre de cartes. L'application mesure le temps réel passé par carte, en déduit ce qui tient dans la journée, ralentit puis suspend les nouveautés quand les révisions s'accumulent, et annonce à l'avance la charge en régime stable. Les mots ratés neuf fois sont mis de côté d'office. |
+| **Pratique** | Deux exercices qui n'ajoutent **aucune** révision : *Tir rapide* (un mot, quatre sens, six secondes) pour la reconnaissance immédiate, et *Phrases* — 121 phrases dites d'un trait, débloquées au fur et à mesure et composées uniquement de mots déjà rencontrés. |
 | **Suivi** | Série de jours consécutifs, objectif quotidien, calendrier d'activité sur 20 semaines, taux de réussite à 7/30/90 jours, charge de révisions prévue, répartition du vocabulaire, mots coriaces. |
 | **Vocabulaire** | Les 1000 mots consultables, filtrables par état / palier / nature, avec recherche et écoute à la demande. |
 | **Hors-ligne** | Tout est enregistré localement puis synchronisé dès que le réseau revient. |

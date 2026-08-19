@@ -8,6 +8,7 @@
  */
 import { WORDS, TOTAL_WORDS } from './data/words.js';
 import * as srs from './srs.js';
+import * as charge from './charge.js';
 import * as supa from './supa.js';
 import { cleJour, differer, minuit } from './util.js';
 
@@ -16,12 +17,17 @@ const HISTORIQUE_MAX = 15_000;
 const HISTORIQUE_JOURS = 400;
 
 export const REGLAGES_DEFAUT = {
+  budgetMinutes: 15, // temps disponible par jour : c'est lui qui pilote le reste
+  pilotageAuto: true, // adapte le nombre de nouveaux mots à la charge réelle
+  pauseAutoSangsues: true, // met de côté les mots qui font perdre du temps
   objectifQuotidien: 30,
-  limiteNouvelles: 12,
+  limiteNouvelles: 12, // plafond haut ; le pilotage automatique reste en dessous
   limiteRevisions: 150,
   modeEtude: 'ecoute', // 'ecoute' | 'rappel' | 'mixte'
   lectureAuto: true,
   vitesse: 0.9,
+  vitessePratique: 1, // les exercices se font à vitesse naturelle, volontairement
+  recordTirRapide: 0,
   voixUri: null,
   afficherRomaji: true,
   afficherKanji: true,
@@ -226,6 +232,13 @@ export function repondre(wordId, note, { mode = 'ecoute', dureeMs = 0 } = {}) {
   if (!avant.premiere) apres.premiere = new Date(maintenant).toISOString();
   else apres.premiere = avant.premiere;
 
+  // Un mot qu'on rate sans cesse mange un temps disproportionné sans rien
+  // apprendre. Passé le seuil, on le met de côté plutôt que de le subir.
+  if (etat.reglages.pauseAutoSangsues && !apres.suspendue && apres.oublis >= srs.SEUIL_PAUSE_AUTO) {
+    apres.suspendue = true;
+    apres.misEnPauseLe = new Date(maintenant).toISOString();
+  }
+
   etat.cartes.set(wordId, apres);
   salies.add(wordId);
 
@@ -384,7 +397,14 @@ export function compteurs(maintenant = Date.now()) {
     }
   }
   const jour = statsDuJour();
-  const nouvellesRestantes = Math.max(0, etat.reglages.limiteNouvelles - jour.nouvellesFaites);
+  const autorisees = charge.nouvellesAutorisees({
+    reglages: etat.reglages,
+    revisions: etat.revisions,
+    dues,
+    faitesAujourdhui: jour.revisionsFaites,
+    nouvellesFaites: jour.nouvellesFaites,
+  });
+  const nouvellesRestantes = Math.min(autorisees, nouvelles);
   return {
     nouvelles,
     dues,
@@ -394,9 +414,34 @@ export function compteurs(maintenant = Date.now()) {
     suspendues,
     vues: TOTAL_WORDS - nouvelles - suspendues,
     total: TOTAL_WORDS,
-    nouvellesRestantes: Math.min(nouvellesRestantes, nouvelles),
-    aFaire: Math.min(dues, etat.reglages.limiteRevisions) + Math.min(nouvellesRestantes, nouvelles),
+    nouvellesRestantes,
+    aFaire: Math.min(dues, etat.reglages.limiteRevisions) + nouvellesRestantes,
   };
+}
+
+/** Diagnostic de charge du jour, pour prévenir avant que la dette ne s'installe. */
+export function diagnosticCharge() {
+  const c = compteurs();
+  const jour = statsDuJour();
+  return charge.diagnostic({
+    reglages: etat.reglages,
+    revisions: etat.revisions,
+    dues: c.dues,
+    faitesAujourdhui: jour.revisionsFaites,
+  });
+}
+
+/** Charge attendue en régime stable si l'on garde ce rythme de nouveautés. */
+export function chargeRegime(nouvellesParJour) {
+  return charge.chargeRegime(nouvellesParJour, etat.revisions);
+}
+
+export function capaciteQuotidienne() {
+  return charge.capaciteQuotidienne(etat.reglages, etat.revisions);
+}
+
+export function couvertureEstimee() {
+  return charge.couverture(compteurs().vues);
 }
 
 /** Nombre de révisions par jour, indexé par clé de jour. */

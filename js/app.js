@@ -8,6 +8,7 @@ import * as tts from './tts.js';
 import { estConfigure } from './config.js';
 import { vueAuth, normaliser } from './views/auth.js';
 import { vueAccueil } from './views/accueil.js';
+import { vuePratique } from './views/pratique.js';
 import { vueVocabulaire } from './views/vocabulaire.js';
 import { vueStats } from './views/stats.js';
 import { vueReglages } from './views/reglages.js';
@@ -17,6 +18,7 @@ const CLE_MODE_LOCAL = 'gabponais.mode-local';
 
 const ROUTES = {
   accueil: { titre: 'Accueil', ico: '🏠', vue: vueAccueil },
+  pratique: { titre: 'Pratique', ico: '🎧', vue: vuePratique },
   vocabulaire: { titre: 'Vocabulaire', ico: '📖', vue: vueVocabulaire },
   stats: { titre: 'Statistiques', ico: '📊', vue: vueStats },
   reglages: { titre: 'Réglages', ico: '⚙️', vue: vueReglages },
@@ -208,10 +210,15 @@ function lancerEtude() {
 function planifierRendu() {
   if (rendreDemande || document.querySelector('.session')) return;
   rendreDemande = true;
-  requestAnimationFrame(() => {
+  const executer = () => {
+    if (!rendreDemande) return;
     rendreDemande = false;
     rendre();
-  });
+  };
+  requestAnimationFrame(executer);
+  // requestAnimationFrame ne s'exécute pas dans un onglet en arrière-plan :
+  // sans ce relais, l'interface resterait figée sur des données périmées.
+  setTimeout(executer, 120);
 }
 
 function rendre(opts = {}) {

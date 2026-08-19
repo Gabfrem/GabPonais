@@ -509,6 +509,94 @@ select { cursor: pointer; }
   }
 }
 
+/* ------------------------------------------------------------- pratique */
+
+.mode { display: flex; flex-direction: column; }
+.mode--bloque { opacity: 0.62; }
+.mode__ico {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+  font-size: 25px; margin-bottom: 14px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--violet) 24%, transparent), color-mix(in srgb, var(--sakura) 20%, transparent));
+}
+.mode__titre { font-size: 19px; margin-bottom: 8px; }
+.mode__texte { font-size: 13.5px; color: var(--texte-2); line-height: 1.6; flex: 1; }
+.mode__meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.mode__blocage { font-size: 12px; color: var(--texte-3); margin-top: 10px; text-align: center; }
+
+.couverture { margin-bottom: 16px; }
+.couverture__jauge {
+  position: relative; height: 26px; border-radius: 8px;
+  background: var(--fond-2); overflow: hidden;
+}
+.couverture__part {
+  height: 100%; border-radius: 8px 4px 4px 8px;
+  background: linear-gradient(90deg, var(--violet), var(--sakura));
+  transition: width 900ms var(--sortie);
+}
+.couverture__seuil {
+  position: absolute; top: -4px; bottom: -4px; width: 2px;
+  background: var(--menthe); box-shadow: 0 0 8px color-mix(in srgb, var(--menthe) 60%, transparent);
+}
+.couverture__legende {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 10px; font-size: 13px; color: var(--texte-2);
+}
+.couverture__legende strong { color: var(--texte); font-size: 16px; }
+.couverture__cible { color: var(--menthe); font-size: 12.5px; }
+.couverture__note { font-size: 13.5px; color: var(--texte-2); line-height: 1.7; }
+
+.prevision {
+  margin-top: 18px; padding: 16px; border-radius: var(--r-m);
+  background: var(--fond-2); border: 1px solid var(--bord);
+}
+.prevision__titre { font-size: 12px; font-weight: 650; color: var(--texte-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.prevision__grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.prevision__case { text-align: center; }
+.prevision__val { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.prevision__lib { font-size: 11.5px; color: var(--texte-2); margin-top: 3px; line-height: 1.4; }
+.prevision__note { font-size: 12.5px; color: var(--texte-2); margin-top: 14px; line-height: 1.6; }
+
+.conseils { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; }
+.conseils li { font-size: 13.5px; color: var(--texte-2); line-height: 1.65; }
+.conseils strong { color: var(--texte); }
+
+.options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 26px; }
+.options--longues { grid-template-columns: 1fr; }
+.option {
+  padding: 15px 16px; border-radius: var(--r-m); cursor: pointer;
+  border: 1px solid var(--bord-fort); background: var(--carte); color: var(--texte);
+  font-size: 15px; font-weight: 550; text-align: center; line-height: 1.4;
+  transition: transform var(--transition), background var(--transition), border-color var(--transition);
+}
+.option:hover:not(:disabled) { transform: translateY(-2px); background: var(--carte-2); border-color: var(--violet); }
+.option:disabled { cursor: default; }
+.option--juste {
+  background: color-mix(in srgb, var(--menthe) 18%, var(--carte));
+  border-color: var(--menthe); color: var(--menthe); font-weight: 700;
+}
+.option--faux {
+  background: color-mix(in srgb, var(--rouge) 15%, var(--carte));
+  border-color: var(--rouge); color: var(--rouge);
+}
+
+.chrono { height: 4px; border-radius: 99px; background: var(--fond-2); overflow: hidden; margin-top: 22px; }
+.chrono span {
+  display: block; height: 100%; width: 100%; transform-origin: left;
+  background: linear-gradient(90deg, var(--menthe), var(--ambre), var(--rouge));
+  animation: chronoFuite linear forwards;
+}
+@keyframes chronoFuite { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (max-width: 760px) {
+  .options { grid-template-columns: 1fr; }
+  .couverture__legende { flex-direction: column; gap: 4px; }
+  /* Deux cartes de mode côte à côte deviennent illisibles sur un téléphone. */
+  .grille--modes { grid-template-columns: 1fr; }
+  .prevision__grille { grid-template-columns: 1fr; gap: 14px; }
+  .prevision__case { display: flex; align-items: baseline; gap: 10px; text-align: left; }
+  .prevision__lib { margin-top: 0; }
+}
+
 /* =========================================================================
    Animations
    Une seule courbe d'accélération partout (--sortie), pour que tout
