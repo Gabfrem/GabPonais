@@ -36,6 +36,7 @@ export const REGLAGES_DEFAUT = {
   ordreNouvelles: 'frequence', // 'frequence' | 'aleatoire'
   theme: 'sombre', // 'sombre' | 'clair'
   testNiveauFait: false, // le test de départ n'est proposé qu'une fois
+  grammaireFaite: [], // identifiants des leçons de grammaire validées
 };
 
 const etat = {
@@ -130,6 +131,7 @@ function fusionner(lignes) {
       oublis: l.oublis ?? 0,
       derniere: l.derniere ?? null,
       premiere: l.premiere ?? l.derniere ?? null,
+      origine: l.origine ?? null,
       suspendue: !!l.suspendue,
     });
   }
@@ -445,6 +447,18 @@ export function couvertureEstimee() {
   return charge.couverture(compteurs().vues);
 }
 
+/** Nombre de mots dont la connaissance a réellement été vérifiée en révision. */
+export function motsVerifies() {
+  let n = 0;
+  for (const c of etat.cartes.values()) if (srs.estConfirme(c)) n += 1;
+  return n;
+}
+
+/** Couverture calculée sur les seuls mots vérifiés — la seule honnête. */
+export function couvertureVerifiee() {
+  return charge.couverture(motsVerifies());
+}
+
 /**
  * Sur combien de jours répartir un lot de mots reconnus au test de niveau,
  * pour rester sous la capacité quotidienne.
@@ -478,6 +492,7 @@ export function appliquerNiveau(ids) {
       palier: 0,
       reps: 1,
       oublis: 0,
+      origine: 'test', // connaissance estimée, pas encore vérifiée en révision
       premiere: new Date(maintenant).toISOString(),
       derniere: new Date(maintenant).toISOString(),
       du: new Date(maintenant + jour * JOUR).toISOString(),

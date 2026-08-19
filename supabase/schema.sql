@@ -31,6 +31,7 @@ create table if not exists public.progress (
   oublis     integer     not null default 0,
   derniere   timestamptz,                      -- dernière réponse
   premiere   timestamptz,                      -- première fois que le mot a été vu
+  origine    text,                             -- 'test' si estimé par le test de niveau
   suspendue  boolean     not null default false,
   updated_at timestamptz not null default now(),
   primary key (user_id, word_id)
@@ -40,6 +41,7 @@ create index if not exists progress_user_du_idx on public.progress (user_id, du)
 
 -- Colonne ajoutée après coup sur les projets créés avec une version antérieure.
 alter table public.progress add column if not exists premiere timestamptz;
+alter table public.progress add column if not exists origine text;
 
 -- --------------------------------------------------------------- reviews --
 -- Journal des réponses : sert aux statistiques, à la série et au calendrier.

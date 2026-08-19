@@ -17,17 +17,28 @@ const QUESTIONS_TIR = 20;
 const QUESTIONS_PHRASES = 10;
 const SECONDES_TIR = 6;
 
+/** Mot déjà rencontré : suffisant pour s'entraîner dessus. */
 const estConnu = (id) => {
   const c = store.carte(id);
   return !!c && c.etat !== srs.ETAT.NOUVELLE;
 };
 
+/**
+ * Mot dont la connaissance est vérifiée en révision.
+ * Le déverrouillage des phrases s'appuie là-dessus, et non sur l'estimation
+ * du test de niveau : sans quoi on tombe sur des phrases pleines de mots
+ * qu'on n'a jamais réellement vus.
+ */
+const estVerifie = (id) => srs.estConfirme(store.carte(id));
+
 export function vuePratique(naviguer, rafraichir) {
   const reglages = store.lire().reglages;
   const motsPrets = WORDS.filter((w) => estConnu(w.id));
-  const phrasesPretes = disponibles(estConnu);
-  const suivante = prochaineADebloquer(estConnu);
-  const couv = store.couvertureEstimee();
+  const motsVerifies = WORDS.filter((w) => estVerifie(w.id));
+  const estimes = motsPrets.length - motsVerifies.length;
+  const phrasesPretes = disponibles(estVerifie);
+  const suivante = prochaineADebloquer(estVerifie);
+  const couv = store.couvertureVerifiee();
 
   return h(
     'div',
@@ -63,18 +74,30 @@ export function vuePratique(naviguer, rafraichir) {
         h(
           'div',
           { class: 'couverture__legende' },
-          h('span', {}, h('strong', {}, nombreAnime(couv, (n) => `${n} %`)), ' des mots d’une conversation courante'),
+          h('span', {}, h('strong', {}, nombreAnime(couv, (n) => `${n} %`)), ` — soit ${motsSurDix(couv)}`),
           h('span', { class: 'couverture__cible', text: '95 % = suivre sans effort' }),
         ),
       ),
       h('p', {
         class: 'couverture__note',
-        text:
-          `Avec ${pluriel(motsPrets.length, 'mot')} rencontré${motsPrets.length > 1 ? 's' : ''}, tu reconnais environ ${couv} % des mots d’une conversation ordinaire. ` +
-          'Or il en faut près de 95 % pour suivre un dialogue sans effort, et les derniers pourcents coûtent bien plus cher que les premiers : ' +
-          'c’est pourquoi on peut travailler des mois et ne saisir que quelques mots dans un épisode. ' +
-          'L’écart se comble surtout en écoutant du japonais réel — ajouter des cartes ne le comblera pas.',
+        text: motsVerifies.length
+          ? `Estimation à partir de ${pluriel(motsVerifies.length, 'mot')} dont la connaissance est vérifiée en révision. ` +
+            `Un taux de ${couv} % paraît encourageant, mais il signifie que ${motsManquantsSurDix(couv)} t’échappent encore : ` +
+            'à ce stade on saisit des mots isolés, pas le sens d’une phrase. Il faut approcher 95 % pour suivre sans effort, ' +
+            'et les derniers pourcents coûtent bien plus cher que les premiers. Ces chiffres sont des ordres de grandeur ' +
+            'tirés d’études de fréquence, pas une mesure sur un contenu précis.'
+          : 'Cette jauge se remplira à mesure que tu retrouveras des mots en révision. Elle ne compte que les mots ' +
+            'réellement vérifiés : c’est le seul chiffre sur lequel on puisse se fier pour juger de ce qui est compréhensible.',
       }),
+      estimes > 0
+        ? h('p', {
+            class: 'couverture__note',
+            style: { marginTop: '10px', color: 'var(--texte-3)' },
+            text:
+              `${pluriel(estimes, 'mot')} de plus ${estimes > 1 ? 'sont estimés' : 'est estimé'} connus par le test de niveau, mais ne comptent pas encore ici : ` +
+              'le test ne sonde que quelques mots par tranche puis accorde la tranche entière. Ils seront pris en compte au fur et à mesure que tu les retrouveras en révision.',
+          })
+        : null,
     ),
 
     /* ---------------------------------------------------------- les modes */
@@ -99,7 +122,7 @@ export function vuePratique(naviguer, rafraichir) {
         titre: 'Phrases',
         texte:
           'Des phrases entières, dites d’un trait, composées uniquement de mots que tu connais déjà. Le pont entre le mot isolé et la parole continue.',
-        meta: `${phrasesPretes.length} / ${TOTAL_PHRASES} débloquée${phrasesPretes.length > 1 ? 's' : ''}`,
+        meta: `${phrasesPretes.length} phrase${phrasesPretes.length > 1 ? 's' : ''} sur ${TOTAL_PHRASES}`,
         record: suivante
           ? `Prochaine dans ${pluriel(suivante.motsManquants, 'mot')} de plus`
           : 'Toutes les phrases sont accessibles',
@@ -108,6 +131,9 @@ export function vuePratique(naviguer, rafraichir) {
         action: () => ouvrirPhrases(phrasesPretes, rafraichir),
       }),
     ),
+
+    /* ------------------------------------------------------- lectures */
+    sectionLectures(motsVerifies.length),
 
     /* ------------------------------------------------- conseil d'écoute */
     h(
@@ -144,6 +170,103 @@ export function vuePratique(naviguer, rafraichir) {
       ),
     ),
   );
+}
+
+/**
+ * Lectures extérieures, classées par nombre de mots vérifiés.
+ * Chaque entrée est libre d'accès ; le seuil indique à partir de quand elle
+ * devient réellement lisible plutôt que décourageante.
+ */
+const LECTURES = [
+  {
+    seuil: 0,
+    nom: 'Tadoku — lectures graduées',
+    url: 'https://tadoku.org/japanese/free-books/',
+    licence: 'gratuit, NPO 多言語多読',
+    quoi:
+      'Des petits livres écrits pour les débutants, du niveau « Start » au niveau 5, avec furigana, audio et versions PDF téléchargeables.',
+    pourquoi:
+      'Le seul point d’entrée vraiment praticable au début : le vocabulaire y est délibérément limité, et les images portent une partie du sens.',
+  },
+  {
+    seuil: 120,
+    nom: 'NHK News Web Easy',
+    url: 'https://www3.nhk.or.jp/news/easy/',
+    licence: 'gratuit, NHK',
+    quoi:
+      'Trois ou quatre actualités par jour ouvré, réécrites en japonais simplifié, tous les kanji annotés en furigana, avec lecture audio lente.',
+    pourquoi:
+      'Textes courts et renouvelés chaque jour : idéal pour une lecture quotidienne de cinq minutes. Reste exigeant, prévois un dictionnaire.',
+  },
+  {
+    seuil: 350,
+    nom: 'yomujp — 日本語多読道場',
+    url: 'https://yomujp.com/',
+    licence: 'gratuit pendant 4 semaines après publication',
+    quoi: 'Des lectures classées par niveau, de N6 (grand débutant) à N1, sur des sujets du quotidien.',
+    pourquoi:
+      'Le classement fin permet de trouver des textes juste au-dessus de ton niveau. Les articles anciens passent derrière un abonnement.',
+  },
+  {
+    seuil: 800,
+    nom: 'Aozora Bunko — 青空文庫',
+    url: 'https://www.aozora.gr.jp/',
+    licence: 'domaine public',
+    quoi: 'Près de 17 000 œuvres de la littérature japonaise tombées dans le domaine public, en texte intégral.',
+    pourquoi:
+      'À réserver pour plus tard : ce sont des textes littéraires non adaptés, souvent en langue ancienne. Les contes courts d’Akutagawa ou de Miyazawa Kenji sont les plus abordables.',
+  },
+];
+
+function sectionLectures(motsVerifies) {
+  return h(
+    'section',
+    { class: 'carte', style: { marginTop: '16px' } },
+    h('h3', { class: 'carte__titre', text: 'Lire en japonais réel' }),
+    h('p', {
+      style: { fontSize: '13.5px', color: 'var(--texte-2)', lineHeight: '1.7', marginBottom: '18px' },
+      text:
+        'Lire coûte moins cher que d’écouter : le texte t’attend, tu peux relire et chercher un mot. C’est souvent par là qu’on décroche les premières compréhensions réelles.',
+    }),
+    h(
+      'div',
+      { class: 'lectures' },
+      ...LECTURES.map((l) => {
+        const accessible = motsVerifies >= l.seuil;
+        return h(
+          'a',
+          {
+            class: `lecture ${accessible ? '' : 'lecture--tot'}`,
+            href: l.url,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+          },
+          h(
+            'div',
+            { class: 'lecture__haut' },
+            h('span', { class: 'lecture__nom', text: l.nom }),
+            h('span', {
+              class: `puce ${accessible ? 'puce--menthe' : ''}`,
+              text: accessible ? 'à ta portée' : `dès ${l.seuil} mots vérifiés`,
+            }),
+          ),
+          h('p', { class: 'lecture__quoi', text: l.quoi }),
+          h('p', { class: 'lecture__pourquoi', text: l.pourquoi }),
+          h('span', { class: 'lecture__licence', text: l.licence }),
+        );
+      }),
+    ),
+  );
+}
+
+/** « 5 mots sur 10 » parle plus qu'un pourcentage. */
+function motsSurDix(pourcentage) {
+  return `environ ${Math.round(pourcentage / 10)} mot${pourcentage >= 15 ? 's' : ''} sur 10`;
+}
+
+function motsManquantsSurDix(pourcentage) {
+  const manquants = Math.max(1, Math.round((100 - pourcentage) / 10));
+  return `${manquants} mot${manquants > 1 ? 's' : ''} sur 10`;
 }
 
 function carteMode({ ico, titre, texte, meta, record, pret, blocage, action }) {

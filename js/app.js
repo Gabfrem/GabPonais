@@ -9,6 +9,7 @@ import { estConfigure, modeLocalChoisi, choisirModeLocal, quitterModeLocal } fro
 import { vueAuth, normaliser } from './views/auth.js';
 import { vueAccueil } from './views/accueil.js';
 import { vuePratique } from './views/pratique.js';
+import { vueGrammaire } from './views/grammaire.js';
 import { vueVocabulaire } from './views/vocabulaire.js';
 import { vueStats } from './views/stats.js';
 import { vueReglages } from './views/reglages.js';
@@ -19,9 +20,10 @@ import { ouvrirTestNiveau } from './views/test-niveau.js';
 const ROUTES = {
   accueil: { titre: 'Accueil', ico: '🏠', vue: vueAccueil },
   pratique: { titre: 'Pratique', ico: '🎧', vue: vuePratique },
-  vocabulaire: { titre: 'Vocabulaire', ico: '📖', vue: vueVocabulaire },
-  stats: { titre: 'Statistiques', ico: '📊', vue: vueStats },
-  reglages: { titre: 'Réglages', ico: '⚙️', vue: vueReglages },
+  grammaire: { titre: 'Grammaire', ico: '📐', court: 'Gram.', vue: vueGrammaire },
+  vocabulaire: { titre: 'Vocabulaire', ico: '📖', court: 'Vocab.', vue: vueVocabulaire },
+  stats: { titre: 'Statistiques', ico: '📊', court: 'Stats', vue: vueStats },
+  reglages: { titre: 'Réglages', ico: '⚙️', court: 'Réglages', vue: vueReglages },
 };
 
 const racine = document.getElementById('racine');
@@ -178,7 +180,7 @@ function rendreNav() {
         'button',
         { class: `nav-mobile__lien ${actif ? 'nav-mobile__lien--actif' : ''}`, onclick: () => aller(cle) },
         h('span', { class: 'nav-mobile__ico', text: r.ico }),
-        h('span', { text: r.titre }),
+        h('span', { text: r.court ?? r.titre }),
         cle === 'accueil' && c.aFaire
           ? h('span', { class: 'nav-mobile__pastille', text: String(Math.min(999, c.aFaire)) })
           : null,

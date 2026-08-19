@@ -569,6 +569,80 @@ select { cursor: pointer; }
 .prevision__lib { font-size: 11.5px; color: var(--texte-2); margin-top: 3px; line-height: 1.4; }
 .prevision__note { font-size: 12.5px; color: var(--texte-2); margin-top: 14px; line-height: 1.6; }
 
+/* ------------------------------------------------------------ grammaire */
+
+.lecons { display: flex; flex-direction: column; gap: 8px; }
+.lecon {
+  display: grid; grid-template-columns: 34px 1fr 20px; align-items: center; gap: 14px;
+  padding: 13px 16px; border-radius: var(--r-m); cursor: pointer; text-align: left;
+  border: 1px solid var(--bord); background: var(--carte); color: var(--texte);
+  transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+.lecon:hover { transform: translateX(3px); border-color: var(--violet); background: var(--carte-2); }
+.lecon__n {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 13px; font-weight: 700; background: var(--fond-2); color: var(--texte-3);
+  border: 1px solid var(--bord);
+}
+.lecon__n--faite {
+  background: color-mix(in srgb, var(--menthe) 18%, transparent);
+  border-color: color-mix(in srgb, var(--menthe) 42%, transparent); color: var(--menthe);
+}
+.lecon__txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lecon__titre { font-size: 14.5px; font-weight: 620; }
+.lecon__resume { font-size: 12.5px; color: var(--texte-3); }
+.lecon__fleche { color: var(--texte-3); transition: transform var(--transition); }
+.lecon:hover .lecon__fleche { transform: translateX(3px); color: var(--violet-clair); }
+
+.cours { width: min(680px, 100%); margin: 0 auto; padding: 8px 0 24px; }
+.cours__titre { font-size: clamp(22px, 3.4vw, 29px); margin-bottom: 8px; }
+.cours__resume { font-size: 15px; color: var(--violet-clair); margin-bottom: 22px; }
+.cours__point { font-size: 15px; line-height: 1.75; color: var(--texte-2); margin-bottom: 14px; }
+.cours__soustitre {
+  font-size: 12px; font-weight: 650; color: var(--texte-3); text-transform: uppercase;
+  letter-spacing: 0.05em; margin: 28px 0 14px;
+}
+.exemple {
+  padding: 14px 16px; border-radius: var(--r-m); margin-bottom: 10px;
+  background: var(--carte); border: 1px solid var(--bord);
+}
+.exemple__haut { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.exemple__ja { font-size: 19px; font-weight: 600; line-height: 1.5; }
+.exemple__kana { font-size: 13.5px; color: var(--texte-2); margin-top: 5px; }
+.exemple__romaji { font-size: 12.5px; color: var(--texte-3); margin-top: 2px; letter-spacing: 0.03em; }
+.exemple__fr { font-size: 14px; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--bord); }
+
+.quiz__enonce { font-size: clamp(17px, 2.6vw, 21px); font-weight: 600; line-height: 1.6; margin-bottom: 6px; }
+.explication {
+  margin-top: 20px; padding: 14px 16px; border-radius: var(--r-m);
+  font-size: 13.5px; line-height: 1.65; text-align: left;
+}
+.explication--juste {
+  background: color-mix(in srgb, var(--menthe) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--menthe) 35%, transparent);
+}
+.explication--faux {
+  background: color-mix(in srgb, var(--ambre) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ambre) 35%, transparent);
+}
+
+.lectures { display: flex; flex-direction: column; gap: 12px; }
+.lecture {
+  display: block; padding: 16px; border-radius: var(--r-m); text-decoration: none;
+  border: 1px solid var(--bord); background: var(--carte-2); color: var(--texte);
+  transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+.lecture:hover { transform: translateY(-2px); border-color: var(--violet); background: var(--carte); }
+.lecture--tot { opacity: 0.6; }
+.lecture__haut { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.lecture__nom { font-size: 15.5px; font-weight: 650; }
+.lecture__quoi { font-size: 13px; color: var(--texte-2); line-height: 1.6; }
+.lecture__pourquoi { font-size: 12.5px; color: var(--texte-3); line-height: 1.6; margin-top: 6px; }
+.lecture__licence {
+  display: inline-block; margin-top: 10px; font-size: 11px; color: var(--texte-3);
+  letter-spacing: 0.03em; text-transform: uppercase;
+}
+
 .conseils { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; }
 .conseils li { font-size: 13.5px; color: var(--texte-2); line-height: 1.65; }
 .conseils strong { color: var(--texte); }

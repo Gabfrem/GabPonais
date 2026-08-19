@@ -157,6 +157,7 @@ export async function enregistrerCartes(userId, cartes) {
     oublis: k.oublis,
     derniere: k.derniere,
     premiere: k.premiere ?? null,
+    origine: k.origine ?? null,
     suspendue: k.suspendue,
     updated_at: new Date().toISOString(),
   }));

@@ -151,6 +151,22 @@ export function estApprise(carte) {
 }
 
 /**
+ * Mot dont la connaissance est *vérifiée*, et pas seulement supposée.
+ *
+ * Le test de niveau ne sonde que quelques mots par tranche puis accorde la
+ * tranche entière : c'est une estimation utile pour ne pas repartir de zéro,
+ * mais on ne peut pas s'y fier pour décider qu'une phrase est compréhensible.
+ * Un mot compte donc comme acquis une fois qu'il a réellement été retrouvé
+ * en révision — et il cesse de compter dès qu'il est oublié.
+ */
+export function estConfirme(carte) {
+  if (!carte || carte.suspendue) return false;
+  if (carte.etat === ETAT.NOUVELLE || carte.etat === ETAT.REAPPRENTISSAGE) return false;
+  if (carte.origine === 'test' && carte.reps <= 1) return false;
+  return true;
+}
+
+/**
  * Construit la file de la session.
  * Les révisions dues passent en premier, les nouveautés sont réparties dedans.
  */
